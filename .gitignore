@@ -140,3 +140,4 @@ cython_debug/
 .vscode
 creds
 legacy.py
+.DS_Store

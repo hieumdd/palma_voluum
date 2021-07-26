@@ -1,65 +1,100 @@
 {
-    "columns": [
+    "column": [
         "postbackTimestamp",
         "visitTimestamp",
-        "externalId",
         "clickId",
-        "transactionId",
-        "revenue",
-        "revenueInOriginalCurrency",
-        "conversionOriginalCurrency",
-        "cost",
         "conversionType",
-        "outgoingPostbackUrl",
-        "creativeId",
-        "campaignId",
-        "campaignName",
-        "publisherName",
-        "publisherId",
-        "landerName",
-        "landerId",
-        "subLanderName",
-        "subLanderId",
         "offerName",
         "offerId",
-        "siteId",
-        "applicationBundle",
-        "applicationName",
         "countryName",
         "countryCode",
         "trafficSourceName",
         "trafficSourceId",
-        "affiliateNetworkName",
-        "affiliateNetworkId",
-        "deviceName",
-        "os",
-        "osVersion",
-        "brand",
-        "model",
-        "browser",
-        "browserVersion",
-        "isp",
-        "mobileCarrier",
-        "connectionTypeName",
         "ip",
-        "referrer",
         "customVariable1",
         "customVariable2",
         "customVariable3",
         "customVariable4",
         "customVariable5",
         "customVariable6",
-        "customVariable7",
-        "customVariable8",
-        "customVariable9",
-        "customVariable10",
-        "actions",
-        "type",
-        "readOnly",
-        "deleted",
-        "campaignType",
-        "isOptimizationEnabled",
-        "externalCampaignId",
-        "isDsp"
+        "customVariable7"
+    ],
+    "schema": [
+        {
+            "name": "clickId",
+            "type": "STRING"
+        },
+        {
+            "name": "conversionType",
+            "type": "STRING"
+        },
+        {
+            "name": "countryCode",
+            "type": "STRING"
+        },
+        {
+            "name": "countryName",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable1",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable2",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable3",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable4",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable5",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable6",
+            "type": "STRING"
+        },
+        {
+            "name": "customVariable7",
+            "type": "STRING"
+        },
+        {
+            "name": "ip",
+            "type": "STRING"
+        },
+        {
+            "name": "offerId",
+            "type": "STRING"
+        },
+        {
+            "name": "offerName",
+            "type": "STRING"
+        },
+        {
+            "name": "postbackTimestamp",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "trafficSourceId",
+            "type": "STRING"
+        },
+        {
+            "name": "trafficSourceName",
+            "type": "STRING"
+        },
+        {
+            "name": "visitTimestamp",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "_batched_at",
+            "type": "TIMESTAMP"
+        }
     ]
 }

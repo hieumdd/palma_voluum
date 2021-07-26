@@ -1,13 +1,24 @@
 import os
 import json
-from datetime import datetime
-import asyncio
-from abc import ABC, abstractmethod
+import csv
+from datetime import datetime, timedelta
 
 import requests
-import aiohttp
+from google.cloud import bigquery
+import jinja2
+
+NOW = datetime.utcnow()
+DATE_FORMAT = "%Y-%m-%d"
+TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
+HOUR_FORMAT = "%Y-%m-%dT%H"
 
 BASE_URL = "https://api.voluum.com"
+
+BQ_CLIENT = bigquery.Client()
+DATASET = "Palma"
+
+TEMPLATE_LOADER = jinja2.FileSystemLoader("./templates")
+TEMPLATE_ENV = jinja2.Environment(loader=TEMPLATE_LOADER)
 
 
 def get_headers():
@@ -20,85 +31,75 @@ def get_headers():
 
 
 class ReportConversions:
+    table = "ReportConversions"
+
     def __init__(self, start=None, end=None):
         self.start, self.end = self.get_time_range(start, end)
-        self.columns = self.get_config()
+        self.column, self.schema = self.get_config()
         self.headers = get_headers()
 
     def get_config(self):
-        with open(f"configs/ReportConversions.json", 'r') as f:
+        with open(f"configs/ReportConversions.json", "r") as f:
             config = json.load(f)
-        return config['columns']
+        return config["column"], config["schema"]
 
-    def get_time_range(self, start, end):
-        return datetime(2021, 7, 20).strftime("%Y-%m-%dT%H:%M:%SZ"), datetime(
-            2021, 7, 27
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    def get_params(self):
-        limit = 1000
-        return {
-            "from": self.start,
-            "to": self.end,
-            "tz": "America/Los_Angeles",
-            "columns": self.columns,
-            "limit": limit,
-        }, limit
+    def get_time_range(self, _start, _end):
+        if _start and _end:
+            start = datetime.strptime(_start, DATE_FORMAT).strftime(HOUR_FORMAT)
+            end = datetime.strptime(_end, DATE_FORMAT).strftime(HOUR_FORMAT)
+        else:
+            end = NOW.strftime(HOUR_FORMAT)
+            start = (NOW - timedelta(days=7)).strftime(HOUR_FORMAT)
+        return start, end
 
     def get(self):
-        limit = 1000
+        url = f"{BASE_URL}/report/conversions"
         params = {
             "from": self.start,
             "to": self.end,
             "tz": "America/Los_Angeles",
-            "columns": self.columns,
-            "limit": limit,
-            "offset": 0,
+            "column": self.column,
         }
-        url = f"{BASE_URL}/report/conversions"
-        rows = asyncio.run(self._get(url))
-        return rows
+        with requests.post(url, params=params, headers=self.headers) as r:
+            res = r.content
+        decoded_content = res.decode("utf-8")
+        csv_lines = decoded_content.splitlines()
+        cr = csv.DictReader(csv_lines[1:], fieldnames=tuple(self.column))
+        return [row for row in cr]
 
-    async def _get(self, url):
-        connector = aiohttp.TCPConnector(limit=3)
-        timeout = aiohttp.ClientTimeout(total=530)
-        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as sessions:
-            total_rows = await self._get_initial_rows(sessions, url)
-            params, limit = self.get_params()
-            offsets = [i for i in range(0, total_rows, limit)]
-            tasks = [asyncio.create_task(self._get_offset(sessions, url, params, i)) for i in offsets]
-            rows = await asyncio.gather(*tasks)
-        return rows
-
-    async def _get_initial_rows(self, sessions, url):
-        params, _ = self.get_params()
-        params['limit'] = 10
-        async with sessions.get(url, params=params, headers=self.headers) as r:
-            res = await r.json()
-        return res['totalRows']
-
-    async def _get_offset(self, sessions, url, params, offset):
-        params['offset'] = offset
-        async with sessions.get(url, params=params, headers=self.headers) as r:
-            res = await r.json()
-        return res['rows']
-        
     def transform(self, rows):
+        rows = [{**row, "_batched_at": NOW.strftime(TIMESTAMP_FORMAT)} for row in rows]
         return rows
 
     def load(self, rows):
-        with open('test.json', 'w') as f:
-            json.dump(rows, f)
+        return BQ_CLIENT.load_table_from_json(
+            rows,
+            f"{DATASET}._stage_{self.table}",
+            job_config=bigquery.LoadJobConfig(
+                create_disposition="CREATE_IF_NEEDED",
+                write_disposition="WRITE_APPEND",
+                schema=self.schema,
+            ),
+        ).result()
+
+    def update(self):
+        template = TEMPLATE_ENV.get_template("update_from_stage.sql.j2")
+        rendered_query = template.render(
+            dataset=DATASET, table=self.table, p_key=",".join(self.column)
+        )
+        BQ_CLIENT.query(rendered_query)
 
     def run(self):
         rows = self.get()
-        rows = self.transform(rows)
-        self.load(rows)
-
-
-def main():
-    job = ReportConversions()
-    job.get()
-
-
-main()
+        responses = {
+            "table": self.table,
+            "start": self.start,
+            "end": self.end,
+            "num_processed": len(rows),
+        }
+        if len(rows) > 0:
+            rows = self.transform(rows)
+            loads = self.load(rows)
+            self.update()
+            responses["output_rows"] = loads.output_rows
+        return responses
