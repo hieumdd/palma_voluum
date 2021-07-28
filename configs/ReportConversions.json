@@ -1,4 +1,10 @@
 {
+    "keys": {
+        "p_key": [
+            "clickId",
+            "conversionType"
+        ]
+    },
     "column": [
         "postbackTimestamp",
         "visitTimestamp",
@@ -11,6 +17,9 @@
         "trafficSourceName",
         "trafficSourceId",
         "ip",
+        "campaignName",
+        "campaignId",
+        "creativeId",
         "customVariable1",
         "customVariable2",
         "customVariable3",
@@ -19,6 +28,12 @@
         "customVariable6",
         "customVariable7"
     ],
+    "fields": {
+        "timestamp": [
+            "postbackTimestamp",
+            "visitTimestamp"
+        ]
+    },
     "schema": [
         {
             "name": "clickId",
@@ -95,6 +110,18 @@
         {
             "name": "_batched_at",
             "type": "TIMESTAMP"
+        },
+        {
+            "name": "campaignName",
+            "type": "STRING"
+        },
+        {
+            "name": "campaignId",
+            "type": "STRING"
+        },
+        {
+            "name": "creativeId",
+            "type": "STRING"
         }
     ]
 }

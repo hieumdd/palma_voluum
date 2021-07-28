@@ -1,7 +1,7 @@
 from .utils import process
 
 START = '2021-07-01'
-END = '2021-07-10'
+END = '2021-07-20'
 
 
 def test_manual():

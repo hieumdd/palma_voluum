@@ -6,11 +6,15 @@ from datetime import datetime, timedelta
 import requests
 from google.cloud import bigquery
 import jinja2
+import pytz
+
 
 NOW = datetime.utcnow()
 DATE_FORMAT = "%Y-%m-%d"
-TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
+T_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S"
+S_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 HOUR_FORMAT = "%Y-%m-%dT%H"
+TZ = "America/Los_Angeles"
 
 BASE_URL = "https://api.voluum.com"
 
@@ -35,13 +39,13 @@ class ReportConversions:
 
     def __init__(self, start=None, end=None):
         self.start, self.end = self.get_time_range(start, end)
-        self.column, self.schema = self.get_config()
+        self.keys, self.column, self.fields, self.schema = self.get_config()
         self.headers = get_headers()
 
     def get_config(self):
         with open(f"configs/ReportConversions.json", "r") as f:
             config = json.load(f)
-        return config["column"], config["schema"]
+        return config["keys"], config["column"], config["fields"], config["schema"]
 
     def get_time_range(self, _start, _end):
         if _start and _end:
@@ -57,18 +61,28 @@ class ReportConversions:
         params = {
             "from": self.start,
             "to": self.end,
-            "tz": "America/Los_Angeles",
+            "tz": TZ,
             "column": self.column,
         }
         with requests.post(url, params=params, headers=self.headers) as r:
+            r.raise_for_status()
             res = r.content
         decoded_content = res.decode("utf-8")
         csv_lines = decoded_content.splitlines()
         cr = csv.DictReader(csv_lines[1:], fieldnames=tuple(self.column))
-        return [row for row in cr]
+        rows = [row for row in cr]
+        return rows
 
     def transform(self, rows):
-        rows = [{**row, "_batched_at": NOW.strftime(TIMESTAMP_FORMAT)} for row in rows]
+        for row in rows:
+            for i in self.fields.get("timestamp"):
+                if row.get(i):
+                    dt = datetime.strptime(row[i], S_TIMESTAMP_FORMAT)
+                    loc_dt = pytz.timezone(TZ).localize(dt)
+                    row[i] = loc_dt.isoformat(timespec="seconds")
+        rows = [
+            {**row, "_batched_at": NOW.strftime(T_TIMESTAMP_FORMAT)} for row in rows
+        ]
         return rows
 
     def load(self, rows):
@@ -90,6 +104,7 @@ class ReportConversions:
         BQ_CLIENT.query(rendered_query)
 
     def run(self):
+        print(BQ_CLIENT.project)
         rows = self.get()
         responses = {
             "table": self.table,

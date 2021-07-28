@@ -7,6 +7,7 @@ name = "pypi"
 requests = "*"
 google-cloud-bigquery = "*"
 jinja2 = "*"
+pytz = "*"
 
 [dev-packages]
 black = "*"
