@@ -3,7 +3,8 @@
         "p_key": [
             "clickId",
             "conversionType"
-        ]
+        ],
+        "incre_key": "_batched_at"
     },
     "column": [
         "postbackTimestamp",

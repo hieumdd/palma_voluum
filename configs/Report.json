@@ -1,0 +1,110 @@
+{
+    "keys": {
+        "p_key": [
+            "date_start",
+            "campaignId"
+        ],
+        "incre_key": "_batched_at"
+    },
+    "column": [
+        "day",
+        "campaignName",
+        "campaignId",
+        "impressions",
+        "visits",
+        "uniqueVisits",
+        "clicks",
+        "conversions",
+        "customConversions1",
+        "customConversions5",
+        "revenue",
+        "cost",
+        "profit",
+        "deleted"
+    ],
+    "fields": {},
+    "schema": [
+        {
+            "name": "campaignId",
+            "description": "Campaign ID",
+            "type": "STRING"
+        },
+        {
+            "name": "campaignName",
+            "description": "Campaign",
+            "type": "STRING"
+        },
+        {
+            "name": "clicks",
+            "description": "Clicks",
+            "type": "INTEGER"
+        },
+        {
+            "name": "conversions",
+            "description": "Conversions",
+            "type": "INTEGER"
+        },
+        {
+            "name": "cost",
+            "description": "Cost",
+            "type": "FLOAT"
+        },
+        {
+            "name": "customConversions1",
+            "description": "LEAD",
+            "type": "INTEGER"
+        },
+        {
+            "name": "customConversions5",
+            "description": "VIEW",
+            "type": "INTEGER"
+        },
+        {
+            "name": "deleted",
+            "description": "Deleted",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "hour",
+            "description": "Hour",
+            "type": "INTEGER"
+        },
+        {
+            "name": "impressions",
+            "description": "Impressions",
+            "type": "INTEGER"
+        },
+        {
+            "name": "profit",
+            "description": "Profit",
+            "type": "FLOAT"
+        },
+        {
+            "name": "revenue",
+            "description": "Revenue",
+            "type": "FLOAT"
+        },
+        {
+            "name": "uniqueVisits",
+            "description": "Unique visits",
+            "type": "INTEGER"
+        },
+        {
+            "name": "visits",
+            "description": "Visits",
+            "type": "INTEGER"
+        },
+        {
+            "name": "date_start",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "date_end",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "_batched_at",
+            "type": "TIMESTAMP"
+        }
+    ]
+}

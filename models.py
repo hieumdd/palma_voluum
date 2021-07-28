@@ -1,6 +1,6 @@
 import os
 import json
-import csv
+import time
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
 
@@ -56,55 +56,13 @@ class Voluum(ABC):
             config = json.load(f)
         return config["keys"], config["column"], config["fields"], config["schema"]
 
-    def get_time_range(self, _start, _end):
-        if _start and _end:
-            start = datetime.strptime(_start, DATE_FORMAT).strftime(HOUR_FORMAT)
-            end = datetime.strptime(_end, DATE_FORMAT).strftime(HOUR_FORMAT)
-        else:
-            end = NOW.strftime(HOUR_FORMAT)
-            start = (NOW - timedelta(days=7)).strftime(HOUR_FORMAT)
-        return start, end
-
+    @abstractmethod
     def get(self):
-        url = f"{BASE_URL}/{self._get_endpoint()}"
-        params = {
-            "from": self.start,
-            "to": self.end,
-            "tz": TZ,
-            "column": self.column,
-        }
-        with requests.post(url, params=params, headers=self.headers) as r:
-            r.raise_for_status()
-            res = r.content
-        decoded_content = res.decode("utf-8")
-        csv_lines = decoded_content.splitlines()
-        with open("test.csv", "w") as f:
-            for line in csv_lines:
-                f.write(line)
-                f.write("\n")
-        cr = csv.DictReader(csv_lines[1:], fieldnames=tuple(self.column), delimiter=",")
-        rows = [row for row in cr]
-        return rows
-
-    @abstractmethod
-    def _get_endpoint(self):
         pass
 
     @abstractmethod
-    def _get_params(self, params):
-        pass
-
     def transform(self, rows):
-        for row in rows:
-            for i in self.fields.get("timestamp"):
-                if row.get(i):
-                    dt = datetime.strptime(row[i], S_TIMESTAMP_FORMAT)
-                    loc_dt = pytz.timezone(TZ).localize(dt)
-                    row[i] = loc_dt.isoformat(timespec="seconds")
-        rows = [
-            {**row, "_batched_at": NOW.strftime(T_TIMESTAMP_FORMAT)} for row in rows
-        ]
-        return rows
+        pass
 
     def load(self, rows):
         return BQ_CLIENT.load_table_from_json(
@@ -120,7 +78,10 @@ class Voluum(ABC):
     def update(self):
         template = TEMPLATE_ENV.get_template("update_from_stage.sql.j2")
         rendered_query = template.render(
-            dataset=DATASET, table=self.table, p_key=",".join(self.keys.get("p_key"))
+            dataset=DATASET,
+            table=self.table,
+            p_key=",".join(self.keys.get("p_key")),
+            incre_key=self.keys.get("incre_key"),
         )
         BQ_CLIENT.query(rendered_query)
 
@@ -146,11 +107,60 @@ class ReportConversions(Voluum):
     def __init__(self, start, end):
         super().__init__(start, end)
 
-    def _get_endpoint(self):
-        return "report/conversions"
+    def get_time_range(self, _start, _end):
+        if _start and _end:
+            start = datetime.strptime(_start, DATE_FORMAT)
+            end = datetime.strptime(_end, DATE_FORMAT)
+        else:
+            end = NOW
+            template = TEMPLATE_ENV.get_template("read_max_incremental.sql.j2")
+            rendered_query = template.render(
+                dataset=DATASET, table=self.table, incre_key="postbackTimestamp"
+            )
+            rows = BQ_CLIENT.query(rendered_query).result()
+            row = [dict(row) for row in rows][0]
+            start = row["incre"]
+        return start, end
 
-    def _get_params(self, params):
+    def get_params(self, params):
         return params
+
+    def get(self):
+        url = f"{BASE_URL}/report/conversions"
+        limit = 10000
+        params = {
+            "from": self.start,
+            "to": self.end,
+            "tz": TZ,
+            "column": self.column,
+            "limit": limit,
+            "offset": 0,
+        }
+        rows = []
+        with requests.Session() as sessions:
+            while True:
+                with sessions.get(url, params=params, headers=self.headers) as r:
+                    r.raise_for_status()
+                    res = r.json()
+                rows.extend(res["rows"])
+                print(len(rows))
+                if len(rows) < res["totalRows"]:
+                    params["offset"] += limit
+                else:
+                    break
+        return rows
+
+    def transform(self, rows):
+        for row in rows:
+            for i in self.fields.get("timestamp"):
+                if row.get(i):
+                    dt = datetime.strptime(row[i], "%Y-%m-%d %I:%M:%S %p")
+                    loc_dt = pytz.timezone(TZ).localize(dt)
+                    row[i] = loc_dt.isoformat(timespec="seconds")
+        rows = [
+            {**row, "_batched_at": NOW.strftime(T_TIMESTAMP_FORMAT)} for row in rows
+        ]
+        return rows
 
 
 class Report(Voluum):
@@ -159,8 +169,61 @@ class Report(Voluum):
     def __init__(self, start, end):
         super().__init__(start, end)
 
-    def _get_endpoint(self):
-        return "report"
+    def get_time_range(self, _start, _end):
+        if _start and _end:
+            start = datetime.strptime(_start, DATE_FORMAT)
+            end = datetime.strptime(_end, DATE_FORMAT)
+        else:
+            end = NOW
+            start = NOW - timedelta(days=28)
+        return start, end
 
-    def _get_params(self, params):
-        return {**params, "conversionTimeMode": "VISIT", "groupBy": "campaign"}
+    def get(self):
+        url = f"{BASE_URL}/report"
+        date_ranges = []
+        _start = self.start
+        while _start <= self.end:
+            date_ranges.append(_start)
+            _start += timedelta(days=1)
+        rows = []
+        limit = 10000
+        with requests.Session() as sessions:
+            for date in date_ranges:
+                params = {
+                    "include": "ALL",
+                    "from": date.strftime(HOUR_FORMAT),
+                    "to": (date + timedelta(days=1)).strftime(HOUR_FORMAT),
+                    "tz": TZ,
+                    "column": self.column,
+                    "conversionTimeMode": "VISIT",
+                    "groupBy": "campaign",
+                    "limit": limit,
+                    "offset": 0,
+                }
+                _rows = []
+                while True:
+                    with sessions.get(url, params=params, headers=self.headers) as r:
+                        res = r.json()
+                    _rows = res["rows"]
+                    if len(_rows) < res["totalRows"]:
+                        params["offset"] += limit
+                        time.sleep(1)
+                    else:
+                        break
+                rows.extend(
+                    [
+                        {
+                            **_row,
+                            "date_start": pytz.timezone(TZ).localize(date).isoformat(),
+                            "date_end": (
+                                pytz.timezone(TZ).localize(date) + timedelta(days=1)
+                            ).isoformat(),
+                            "_batched_at": NOW.isoformat(),
+                        }
+                        for _row in _rows
+                    ]
+                )
+        return rows
+
+    def transform(self, rows):
+        return rows
