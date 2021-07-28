@@ -2,6 +2,7 @@ import os
 import json
 import csv
 from datetime import datetime, timedelta
+from abc import ABC, abstractmethod
 
 import requests
 from google.cloud import bigquery
@@ -34,16 +35,24 @@ def get_headers():
     return {"cwauth-token": res["token"]}
 
 
-class ReportConversions:
-    table = "ReportConversions"
-
-    def __init__(self, start=None, end=None):
+class Voluum(ABC):
+    def __init__(self, start, end):
         self.start, self.end = self.get_time_range(start, end)
         self.keys, self.column, self.fields, self.schema = self.get_config()
         self.headers = get_headers()
 
+    @staticmethod
+    def factory(mode, start, end):
+        args = (start, end)
+        if mode == "report_conversions":
+            return ReportConversions(*args)
+        elif mode == "report":
+            return Report(*args)
+        else:
+            raise NotImplementedError(mode)
+
     def get_config(self):
-        with open(f"configs/ReportConversions.json", "r") as f:
+        with open(f"configs/{self.table}.json", "r") as f:
             config = json.load(f)
         return config["keys"], config["column"], config["fields"], config["schema"]
 
@@ -57,7 +66,7 @@ class ReportConversions:
         return start, end
 
     def get(self):
-        url = f"{BASE_URL}/report/conversions"
+        url = f"{BASE_URL}/{self._get_endpoint()}"
         params = {
             "from": self.start,
             "to": self.end,
@@ -69,9 +78,21 @@ class ReportConversions:
             res = r.content
         decoded_content = res.decode("utf-8")
         csv_lines = decoded_content.splitlines()
-        cr = csv.DictReader(csv_lines[1:], fieldnames=tuple(self.column))
+        with open("test.csv", "w") as f:
+            for line in csv_lines:
+                f.write(line)
+                f.write("\n")
+        cr = csv.DictReader(csv_lines[1:], fieldnames=tuple(self.column), delimiter=",")
         rows = [row for row in cr]
         return rows
+
+    @abstractmethod
+    def _get_endpoint(self):
+        pass
+
+    @abstractmethod
+    def _get_params(self, params):
+        pass
 
     def transform(self, rows):
         for row in rows:
@@ -99,12 +120,11 @@ class ReportConversions:
     def update(self):
         template = TEMPLATE_ENV.get_template("update_from_stage.sql.j2")
         rendered_query = template.render(
-            dataset=DATASET, table=self.table, p_key=",".join(self.column)
+            dataset=DATASET, table=self.table, p_key=",".join(self.keys.get("p_key"))
         )
         BQ_CLIENT.query(rendered_query)
 
     def run(self):
-        print(BQ_CLIENT.project)
         rows = self.get()
         responses = {
             "table": self.table,
@@ -118,3 +138,29 @@ class ReportConversions:
             self.update()
             responses["output_rows"] = loads.output_rows
         return responses
+
+
+class ReportConversions(Voluum):
+    table = "ReportConversions"
+
+    def __init__(self, start, end):
+        super().__init__(start, end)
+
+    def _get_endpoint(self):
+        return "report/conversions"
+
+    def _get_params(self, params):
+        return params
+
+
+class Report(Voluum):
+    table = "Report"
+
+    def __init__(self, start, end):
+        super().__init__(start, end)
+
+    def _get_endpoint(self):
+        return "report"
+
+    def _get_params(self, params):
+        return {**params, "conversionTimeMode": "VISIT", "groupBy": "campaign"}

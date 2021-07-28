@@ -1,7 +1,8 @@
 import json
 import base64
 
-from models import ReportConversions
+from models import Voluum
+from broadcast import broadcast
 
 
 def main(request):
@@ -11,9 +12,14 @@ def main(request):
     data = json.loads(base64.b64decode(data_bytes).decode("utf-8"))
     print(data)
 
-    job = ReportConversions(data.get("start"), data.get("end"))
-    results = job.run()
-    responses = {"pipelines": "Taboola", "results": results}
+    if "broadcast" in data:
+        results = broadcast(data)
+    elif "table" in data:
+        job = Voluum.factory(data["table"], data.get("start"), data.get("end"))
+        results = job.run()
+    else:
+        raise NotImplementedError(data)
 
+    responses = {"pipelines": "Taboola", "results": results}
     print(responses)
     return responses

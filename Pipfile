@@ -8,6 +8,7 @@ requests = "*"
 google-cloud-bigquery = "*"
 jinja2 = "*"
 pytz = "*"
+google-cloud-pubsub = "*"
 
 [dev-packages]
 black = "*"
