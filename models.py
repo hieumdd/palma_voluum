@@ -28,19 +28,17 @@ TEMPLATE_ENV = jinja2.Environment(loader=TEMPLATE_LOADER)
 
 def get_headers():
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
-    payload = {"accessId": os.getenv("ACCESS_ID"), "accessKey": os.getenv("ACCESS_KEY")}
-    url = f"{BASE_URL}/auth/access/session"
+    payload = {
+        "email": os.getenv("EMAIL"),
+        "password": os.getenv("PWD"),
+    }
+    url = f"{BASE_URL}/auth/session"
     with requests.post(url, data=json.dumps(payload), headers=headers) as r:
         res = r.json()
     return {"cwauth-token": res["token"]}
 
 
 class Voluum(ABC):
-    def __init__(self, start, end):
-        self.start, self.end = self.get_time_range(start, end)
-        self.keys, self.column, self.fields, self.schema = self.get_config()
-        self.headers = get_headers()
-
     @staticmethod
     def factory(mode, start, end):
         args = (start, end)
@@ -50,6 +48,11 @@ class Voluum(ABC):
             return Report(*args)
         else:
             raise NotImplementedError(mode)
+
+    def __init__(self, start, end):
+        self.start, self.end = self.get_time_range(start, end)
+        self.keys, self.column, self.fields, self.schema = self.get_config()
+        self.headers = get_headers()
 
     def get_config(self):
         with open(f"configs/{self.table}.json", "r") as f:
@@ -129,8 +132,8 @@ class ReportConversions(Voluum):
         url = f"{BASE_URL}/report/conversions"
         limit = 10000
         params = {
-            "from": self.start,
-            "to": self.end,
+            "from": self.start.strftime("%Y-%m-%dT%H"),
+            "to": self.end.strftime("%Y-%m-%dT%H"),
             "tz": TZ,
             "column": self.column,
             "limit": limit,
@@ -191,8 +194,12 @@ class Report(Voluum):
             for date in date_ranges:
                 params = {
                     "include": "ALL",
-                    "from": date.strftime(HOUR_FORMAT),
-                    "to": (date + timedelta(days=1)).strftime(HOUR_FORMAT),
+                    "from": date.replace(hour=0, minute=0, second=0).strftime(
+                        "%Y-%m-%dT%H:%M:%SZ"
+                    ),
+                    "to": (
+                        date.replace(hour=0, minute=0, second=0) + timedelta(days=1)
+                    ).strftime("%Y-%m-%dT%H:%M:%SZ"),
                     "tz": TZ,
                     "column": self.column,
                     "conversionTimeMode": "VISIT",

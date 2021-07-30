@@ -1,8 +1,27 @@
 {
     "keys": {
         "p_key": [
+            "postbackTimestamp",
+            "visitTimestamp",
             "clickId",
-            "conversionType"
+            "conversionType",
+            "offerName",
+            "offerId",
+            "countryName",
+            "countryCode",
+            "trafficSourceName",
+            "trafficSourceId",
+            "ip",
+            "campaignName",
+            "campaignId",
+            "creativeId",
+            "customVariable1",
+            "customVariable2",
+            "customVariable3",
+            "customVariable4",
+            "customVariable5",
+            "customVariable6",
+            "customVariable7"
         ],
         "incre_key": "_batched_at"
     },
