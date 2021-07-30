@@ -210,6 +210,7 @@ class Report(Voluum):
                 _rows = []
                 while True:
                     with sessions.get(url, params=params, headers=self.headers) as r:
+                        r.raise_for_status()
                         res = r.json()
                     _rows = res["rows"]
                     if len(_rows) < res["totalRows"]:
