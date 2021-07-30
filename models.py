@@ -30,7 +30,7 @@ def get_headers():
     headers = {"Content-Type": "application/json", "Accept": "application/json"}
     payload = {
         "email": os.getenv("EMAIL"),
-        "password": os.getenv("PWD"),
+        "password": os.getenv("VPWD"),
     }
     url = f"{BASE_URL}/auth/session"
     with requests.post(url, data=json.dumps(payload), headers=headers) as r:
