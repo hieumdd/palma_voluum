@@ -3,6 +3,7 @@ import json
 import time
 from datetime import datetime, timedelta
 from abc import ABC, abstractmethod
+from urllib3.util.retry import Retry
 
 import requests
 from google.cloud import bigquery
@@ -18,6 +19,8 @@ HOUR_FORMAT = "%Y-%m-%dT%H"
 TZ = "America/Los_Angeles"
 
 BASE_URL = "https://api.voluum.com"
+RETRY_STRATEGY = Retry(total=5, status_forcelist=[429])
+ADAPTER = requests.adapters.HTTPAdapter(max_retries=RETRY_STRATEGY)
 
 BQ_CLIENT = bigquery.Client()
 DATASET = "Palma"
@@ -141,6 +144,7 @@ class ReportConversions(Voluum):
         }
         rows = []
         with requests.Session() as sessions:
+            sessions.mount("https://", ADAPTER)
             while True:
                 with sessions.get(url, params=params, headers=self.headers) as r:
                     r.raise_for_status()
@@ -191,6 +195,7 @@ class Report(Voluum):
         rows = []
         limit = 10000
         with requests.Session() as sessions:
+            sessions.mount("https://", ADAPTER)
             for date in date_ranges:
                 params = {
                     "include": "ALL",
