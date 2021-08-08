@@ -125,7 +125,7 @@ class ReportConversions(Voluum):
             )
             rows = BQ_CLIENT.query(rendered_query).result()
             row = [dict(row) for row in rows][0]
-            start = row["incre"]
+            start = row["incre"].astimezone(pytz.timezone(TZ))
         return start, end
 
     def get_params(self, params):
