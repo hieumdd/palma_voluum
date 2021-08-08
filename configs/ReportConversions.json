@@ -36,6 +36,7 @@
         "countryCode",
         "trafficSourceName",
         "trafficSourceId",
+        "transactionId",
         "ip",
         "campaignName",
         "campaignId",
@@ -97,6 +98,10 @@
         },
         {
             "name": "customVariable7",
+            "type": "STRING"
+        },
+        {
+            "name": "transactionId",
             "type": "STRING"
         },
         {

@@ -20,6 +20,6 @@ def main(request):
     else:
         raise NotImplementedError(data)
 
-    responses = {"pipelines": "Taboola", "results": results}
+    responses = {"pipelines": "Voluum", "results": results}
     print(responses)
     return responses

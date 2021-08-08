@@ -218,6 +218,7 @@ class Report(Voluum):
                         r.raise_for_status()
                         res = r.json()
                     _rows = res["rows"]
+                    _rows
                     if len(_rows) < res["totalRows"]:
                         params["offset"] += limit
                         time.sleep(1)
@@ -227,15 +228,21 @@ class Report(Voluum):
                     [
                         {
                             **_row,
-                            "date_start": pytz.timezone(TZ).localize(date).isoformat(),
+                            "date_start": pytz.timezone(TZ)
+                            .localize(date)
+                            .replace(hour=0, minute=0, second=0)
+                            .strftime(T_TIMESTAMP_FORMAT),
                             "date_end": (
                                 pytz.timezone(TZ).localize(date) + timedelta(days=1)
-                            ).isoformat(),
+                            )
+                            .replace(hour=0, minute=0, second=0)
+                            .strftime(T_TIMESTAMP_FORMAT),
                             "_batched_at": NOW.isoformat(),
                         }
                         for _row in _rows
                     ]
                 )
+                rows
         return rows
 
     def transform(self, rows):
