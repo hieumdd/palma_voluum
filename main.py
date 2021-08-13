@@ -15,11 +15,18 @@ def main(request):
     if "broadcast" in data:
         results = broadcast(data)
     elif "table" in data:
-        job = Voluum.factory(data["table"], data.get("start"), data.get("end"))
+        job = Voluum.factory(
+            data["table"],
+            data.get("start"),
+            data.get("end"),
+        )
         results = job.run()
     else:
         raise NotImplementedError(data)
 
-    responses = {"pipelines": "Voluum", "results": results}
+    responses = {
+        "pipelines": "Voluum",
+        "results": results,
+    }
     print(responses)
     return responses

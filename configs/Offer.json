@@ -1,0 +1,53 @@
+{
+    "keys": {
+        "p_key": [
+            "id"
+        ],
+        "incre_key": "updatedTime"
+    },
+    "column": [
+        "createdTime",
+        "currencyCode",
+        "deleted",
+        "id",
+        "name",
+        "namePostfix",
+        "updatedTime",
+        "url"
+    ],
+    "fields": {},
+    "schema": [
+        {
+            "name": "id",
+            "type": "STRING"
+        },
+        {
+            "name": "name",
+            "type": "STRING"
+        },
+        {
+            "name": "namePostfix",
+            "type": "STRING"
+        },
+        {
+            "name": "createdTime",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "updatedTime",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "deleted",
+            "type": "BOOLEAN"
+        },
+        {
+            "name": "url",
+            "type": "STRING"
+        },
+        {
+            "name": "currencyCode",
+            "type": "STRING"
+        }
+    ]
+}

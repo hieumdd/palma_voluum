@@ -30,15 +30,24 @@ TEMPLATE_ENV = jinja2.Environment(loader=TEMPLATE_LOADER)
 
 
 def get_headers():
-    headers = {"Content-Type": "application/json", "Accept": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
     payload = {
         "email": os.getenv("EMAIL"),
         "password": os.getenv("VPWD"),
     }
     url = f"{BASE_URL}/auth/session"
-    with requests.post(url, data=json.dumps(payload), headers=headers) as r:
+    with requests.post(
+        url,
+        data=json.dumps(payload),
+        headers=headers,
+    ) as r:
         res = r.json()
-    return {"cwauth-token": res["token"]}
+    return {
+        "cwauth-token": res["token"],
+    }
 
 
 class Voluum(ABC):
@@ -49,6 +58,8 @@ class Voluum(ABC):
             return ReportConversions(*args)
         elif mode == "report":
             return Report(*args)
+        elif mode == "offer":
+            return Offer(*args)
         else:
             raise NotImplementedError(mode)
 
@@ -56,6 +67,10 @@ class Voluum(ABC):
         self.start, self.end = self.get_time_range(start, end)
         self.keys, self.column, self.fields, self.schema = self.get_config()
         self.headers = get_headers()
+
+    @abstractmethod
+    def get_time_range(self, start, end):
+        pass
 
     def get_config(self):
         with open(f"configs/{self.table}.json", "r") as f:
@@ -121,7 +136,9 @@ class ReportConversions(Voluum):
             end = NOW
             template = TEMPLATE_ENV.get_template("read_max_incremental.sql.j2")
             rendered_query = template.render(
-                dataset=DATASET, table=self.table, incre_key="postbackTimestamp"
+                dataset=DATASET,
+                table=self.table,
+                incre_key="postbackTimestamp",
             )
             rows = BQ_CLIENT.query(rendered_query).result()
             row = [dict(row) for row in rows][0]
@@ -146,11 +163,14 @@ class ReportConversions(Voluum):
         with requests.Session() as sessions:
             sessions.mount("https://", ADAPTER)
             while True:
-                with sessions.get(url, params=params, headers=self.headers) as r:
+                with sessions.get(
+                    url,
+                    params=params,
+                    headers=self.headers,
+                ) as r:
                     r.raise_for_status()
                     res = r.json()
                 rows.extend(res["rows"])
-                print(len(rows))
                 if len(rows) < res["totalRows"]:
                     params["offset"] += limit
                 else:
@@ -165,7 +185,11 @@ class ReportConversions(Voluum):
                     loc_dt = pytz.timezone(TZ).localize(dt)
                     row[i] = loc_dt.isoformat(timespec="seconds")
         rows = [
-            {**row, "_batched_at": NOW.strftime(T_TIMESTAMP_FORMAT)} for row in rows
+            {
+                **row,
+                "_batched_at": NOW.strftime(T_TIMESTAMP_FORMAT),
+            }
+            for row in rows
         ]
         return rows
 
@@ -218,7 +242,6 @@ class Report(Voluum):
                         r.raise_for_status()
                         res = r.json()
                     _rows = res["rows"]
-                    _rows
                     if len(_rows) < res["totalRows"]:
                         params["offset"] += limit
                         time.sleep(1)
@@ -246,4 +269,33 @@ class Report(Voluum):
         return rows
 
     def transform(self, rows):
+        return rows
+
+
+class Offer(Voluum):
+    table = "Offer"
+
+    def __init__(self, start, end):
+        super().__init__(start, end)
+
+    def get_time_range(self, start, end):
+        return None, None
+
+    def get(self):
+        url = f"{BASE_URL}/offer"
+        params = {
+            "includeDeleted": True,
+            "fields": self.column,
+        }
+        with requests.get(
+            url,
+            params=params,
+            headers=self.headers,
+        ) as r:
+            r.raise_for_status()
+            res = r.json()
+        return res["offers"]
+
+    def transform(self, _rows):
+        rows = [{col: row[col] for col in self.column} for row in _rows]
         return rows

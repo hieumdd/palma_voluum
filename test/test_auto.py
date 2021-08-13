@@ -13,3 +13,9 @@ def test_report():
         "table": "report",
     }
     process(data)
+
+def test_offer():
+    data = {
+        "table": "offer",
+    }
+    process(data)
