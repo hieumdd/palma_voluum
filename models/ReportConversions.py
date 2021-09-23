@@ -70,7 +70,7 @@ class ReportConversions(Voluum):
         else:
             end = NOW
             query = f"""
-            SELECT MAX({self.incre_key}) AS incre
+            SELECT MAX({self.keys['incre_key']}) AS incre
             FROM `{DATASET}`.`{self.table}`
             """
             rows = BQ_CLIENT.query(query).result()
