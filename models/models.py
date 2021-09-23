@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 
 import requests
 from google.cloud import bigquery
-import jinja2
 
 
 NOW = datetime.utcnow()
@@ -17,9 +16,6 @@ BASE_URL = "https://api.voluum.com"
 
 BQ_CLIENT = bigquery.Client()
 DATASET = "Palma"
-
-TEMPLATE_LOADER = jinja2.FileSystemLoader("./templates")
-TEMPLATE_ENV = jinja2.Environment(loader=TEMPLATE_LOADER)
 
 
 def get_headers(session):
@@ -88,14 +84,23 @@ class Voluum(ABC):
         return output_rows
 
     def _update(self):
-        template = TEMPLATE_ENV.get_template("update_from_stage.sql.j2")
-        rendered_query = template.render(
-            dataset=DATASET,
-            table=self.table,
-            p_key=",".join(self.keys.get("p_key")),
-            incre_key=self.keys.get("incre_key"),
-        )
-        BQ_CLIENT.query(rendered_query).result()
+        query = f"""
+        CREATE OR REPLACE TABLE `{DATASET}`.`{self.table}` AS
+        SELECT * EXCEPT (row_num) FROM
+        (
+            SELECT
+                *,
+                ROW_NUMBER() over (
+                    PARTITION BY {','.join(self.keys['p_key'])}
+                    ORDER BY {self.keys['incre_key']} DESC
+                    ) AS row_num
+                FROM
+                    `{DATASET}`.`_stage_{self.table}`
+            )
+        WHERE
+            row_num = 1
+        """
+        BQ_CLIENT.query(query).result()
 
     def run(self):
         with requests.Session() as session:
