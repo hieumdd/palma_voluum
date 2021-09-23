@@ -21,7 +21,7 @@ from main import main
     ids=("auto", "manual"),
 )
 def test_units(table, start, end):
-    if table == "Offer" and start is None:
+    if table == "Offer" and start:
         pytest.skip()
     data = {
         "table": table,
