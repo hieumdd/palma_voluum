@@ -1,7 +1,7 @@
 import json
 import base64
 
-from models import Voluum
+from models.models import Voluum
 from broadcast import broadcast
 
 

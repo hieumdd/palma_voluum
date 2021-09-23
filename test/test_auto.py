@@ -3,19 +3,19 @@ from .utils import process
 
 def test_report_conversions():
     data = {
-        "table": "report_conversions",
+        "table": "ReportConversions",
     }
     process(data)
 
 
 def test_report():
     data = {
-        "table": "report",
+        "table": "Report",
     }
     process(data)
 
 def test_offer():
     data = {
-        "table": "offer",
+        "table": "Offer",
     }
     process(data)

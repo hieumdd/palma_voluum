@@ -6,7 +6,7 @@ END = '2021-08-06'
 
 def test_report_conversions():
     data = {
-        "table": "report_conversions",
+        "table": "ReportConversions",
         "start": START,
         "end": END,
     }
@@ -15,7 +15,7 @@ def test_report_conversions():
 
 def test_report():
     data = {
-        "table": "report",
+        "table": "Report",
         "start": START,
         "end": END,
     }
