@@ -15,7 +15,7 @@ TZ = "America/Los_Angeles"
 BASE_URL = "https://api.voluum.com"
 
 BQ_CLIENT = bigquery.Client()
-DATASET = "Palma"
+DATASET = "Palma_dev"
 
 
 def get_headers(session):
