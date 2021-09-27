@@ -18,9 +18,6 @@ class Offer(Voluum):
         {"name": "currencyCode", "type": "STRING"},
     ]
 
-    def __init__(self, *args):
-        pass
-
     def _get(self, session, headers):
         with session.get(
             url=f"{BASE_URL}/offer",

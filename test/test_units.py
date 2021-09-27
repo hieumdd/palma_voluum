@@ -16,10 +16,13 @@ from main import main
 @pytest.mark.parametrize(
     ("start", "end"),
     [
-        (None, None),
+        # (None, None),
         ("2021-09-01", "2021-09-02"),
     ],
-    ids=("auto", "manual"),
+    ids=(
+        # "auto",
+        "manual",
+    ),
 )
 def test_units(table, start, end):
     if table == "Offer" and start:

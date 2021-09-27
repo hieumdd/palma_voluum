@@ -15,7 +15,7 @@ TZ = "America/Los_Angeles"
 BASE_URL = "https://api.voluum.com"
 
 BQ_CLIENT = bigquery.Client()
-DATASET = "Palma_dev"
+DATASET = "Palma"
 
 
 def get_headers(session):
@@ -57,6 +57,9 @@ class Voluum(ABC):
     @abstractmethod
     def schema(self):
         pass
+
+    def __init__(self):
+        self.table = self.__class__.__name__
 
     @abstractmethod
     def _get(self, session, headers):

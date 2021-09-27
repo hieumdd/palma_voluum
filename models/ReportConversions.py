@@ -6,7 +6,6 @@ from models.models import Voluum, BQ_CLIENT, DATASET, BASE_URL, NOW, DATE_FORMAT
 
 
 class ReportConversions(Voluum):
-    table = "ReportConversions"
     keys = {
         "p_key": [
             "postbackTimestamp",
@@ -60,6 +59,7 @@ class ReportConversions(Voluum):
     ]
 
     def __init__(self, start, end):
+        super().__init__()
         self.start, self.end = self._get_time_range(start, end)
 
     def _get_time_range(self, _start, _end):

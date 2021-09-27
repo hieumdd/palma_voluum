@@ -7,7 +7,6 @@ from models.models import Voluum, BASE_URL, NOW, DATE_FORMAT, TZ
 
 
 class Report(Voluum):
-    table = "Report"
     keys = {
         "p_key": ["date_start", "campaignId"],
         "incre_key": "_batched_at",
@@ -33,6 +32,7 @@ class Report(Voluum):
     ]
 
     def __init__(self, start, end):
+        super().__init__()
         self.start, self.end = self._get_time_range(start, end)
 
     def _get_time_range(self, _start, _end):
