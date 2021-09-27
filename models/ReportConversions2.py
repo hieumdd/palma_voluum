@@ -5,8 +5,8 @@ import pytz
 from models.models import Voluum, BQ_CLIENT, DATASET, BASE_URL, NOW, DATE_FORMAT, TZ
 
 
-class ReportConversions(Voluum):
-    table = "ReportConversions"
+class ReportConversions2(Voluum):
+    table = "ReportConversions2"
     keys = {
         "p_key": [
             "postbackTimestamp",
@@ -56,6 +56,11 @@ class ReportConversions(Voluum):
         {"name": "campaignName", "type": "STRING"},
         {"name": "campaignId", "type": "STRING"},
         {"name": "creativeId", "type": "STRING"},
+        {"name": "countryName", "type": "STRING"},
+        {"name": "deviceName", "type": "STRING"},
+        {"name": "os", "type": "STRING"},
+        {"name": "osVersion", "type": "STRING"},
+        {"name": "browser", "type": "STRING"},
         {"name": "_batched_at", "type": "TIMESTAMP"},
     ]
 
@@ -154,6 +159,11 @@ class ReportConversions(Voluum):
                 "customVariable5": row["customVariable5"],
                 "customVariable6": row["customVariable6"],
                 "customVariable7": row["customVariable7"],
+                "countryName": row["countryName"],
+                "deviceName": row["deviceName"],
+                "os": row["os"],
+                "osVersion": row["osVersion"],
+                "browser": row["browser"],
                 "_batched_at": NOW.isoformat(timespec="seconds"),
             }
             for row in rows

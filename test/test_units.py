@@ -8,6 +8,7 @@ from main import main
     "table",
     [
         "ReportConversions",
+        "ReportConversions2",
         "Report",
         "Offer",
     ],
