@@ -2,7 +2,7 @@ import os
 import json
 from datetime import datetime
 import importlib
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 import requests
 from google.cloud import bigquery
@@ -38,7 +38,7 @@ def get_headers(session):
     }
 
 
-class Voluum(ABC):
+class Voluum(metaclass=ABCMeta):
     @staticmethod
     def factory(table, start, end):
         try:
@@ -114,8 +114,8 @@ class Voluum(ABC):
         if getattr(self, "start", None) and getattr(self, "end", None):
             response = {
                 **response,
-                "start": self.start,
-                "end": self.end,
+                "start": self.start.isoformat(timespec='seconds'),
+                "end": self.end.isoformat(timespec='seconds'),
             }
         if len(rows) > 0:
             rows = self._transform(rows)
