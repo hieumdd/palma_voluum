@@ -6,7 +6,6 @@ on:
 
 env:
   FUNCTIONS_NAME: Palma_Voluum
-  TOPIC_ID: palma_voluum
   REGION: us-central1
 
 jobs:
@@ -33,4 +32,4 @@ jobs:
           --runtime=python38
           --trigger-http
           --service-account=${{ secrets.GCP_SA }}
-          --set-env-vars=EMAIL=${{ secrets.EMAIL }},VPWD=${{ secrets.VPWD }},PROJECT_ID=${{ secrets.PROJECT_ID }},TOPIC_ID=${{ env.TOPIC_ID }}
+          --set-env-vars=EMAIL=${{ secrets.EMAIL }},VPWD=${{ secrets.VPWD }},PROJECT_ID=${{ secrets.PROJECT_ID }}
