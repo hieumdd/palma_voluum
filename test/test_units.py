@@ -16,14 +16,15 @@ from main import main
 @pytest.mark.parametrize(
     ("start", "end"),
     [
-        # (None, None),
-        ("2021-09-01", "2021-09-02"),
+        (None, None),
+        # ("2021-09-25", "2021-09-30"),
     ],
     ids=(
-        # "auto",
-        "manual",
+        "auto",
+        # "manual",
     ),
 )
+@pytest.mark.timeout(0)
 def test_units(table, start, end):
     if table == "Offer" and start:
         pytest.skip()

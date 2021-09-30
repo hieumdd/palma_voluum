@@ -8,7 +8,10 @@ from models.models import Voluum, BASE_URL, NOW, DATE_FORMAT, TZ
 
 class Report(Voluum):
     keys = {
-        "p_key": ["date_start", "campaignId"],
+        "p_key": [
+            "date_start",
+            "campaignId",
+        ],
         "incre_key": "_batched_at",
     }
     schema = [
@@ -100,7 +103,9 @@ class Report(Voluum):
             for row in rows
         ]
         time.sleep(1)
-        return rows + self._get_one(session, headers, date, offset + limit) if rows else []
+        return (
+            rows + self._get_one(session, headers, date, offset + limit) if rows else []
+        )
 
     def _transform(self, rows):
         rows = [i for j in rows for i in j]
