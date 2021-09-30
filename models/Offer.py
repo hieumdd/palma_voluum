@@ -2,9 +2,9 @@ from models.models import Voluum, BASE_URL
 
 
 class Offer(Voluum):
-    table = "Offer"
     keys = {
-        "p_key": ["id"],
+        "p_key": ["id",
+        ],
         "incre_key": "updatedTime",
     }
     schema = [
@@ -17,6 +17,9 @@ class Offer(Voluum):
         {"name": "url", "type": "STRING"},
         {"name": "currencyCode", "type": "STRING"},
     ]
+
+    def __init__(self, *args):
+        super().__init__()
 
     def _get(self, session, headers):
         with session.get(
